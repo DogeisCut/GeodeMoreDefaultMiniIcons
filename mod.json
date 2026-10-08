@@ -13,5 +13,12 @@
 	"description": "Adds mini icons to the rest of the gamemodes.",
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
+	},
+	"resources": {
+    	"spritesheets": {
+			"MiniIcons": [
+				"resources/*.png"
+			]
+		}
 	}
 }

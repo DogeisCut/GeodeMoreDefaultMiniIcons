@@ -2,6 +2,45 @@
 
 using namespace geode::prelude;
 
+static void aliasMini(std::string const& mode, std::string const& part) {
+    auto cache = CCSpriteFrameCache::get();
+    auto from = fmt::format("{}/{}_00_{}001.png", Mod::get()->getID(), mode, part);
+    auto to = fmt::format("{}_00_{}001.png", mode, part);
+    if (auto frame = cache->spriteFrameByName(from.c_str())) {
+        cache->addSpriteFrame(frame, to.c_str());
+    } else {
+        log::warn("missing mini frame: {}", from);
+    }
+}
+
+static void aliasAllMiniFrames() {
+    for (auto mode : {"ship"/*, "dart", "swing", "jetpack"*/}) {
+        aliasMini(mode, "");
+        aliasMini(mode, "2_");
+        aliasMini(mode, "glow_");
+    }
+    aliasMini("bird", "");
+    aliasMini("bird", "2_");
+    aliasMini("bird", "3_");
+    aliasMini("bird", "glow_");
+}
+
+#include <Geode/modify/MenuLayer.hpp>
+class $modify(MyMenuLayer, MenuLayer) {
+    bool init() {
+        if (!MenuLayer::init()) return false;
+        aliasAllMiniFrames();
+        return true;
+    }
+};
+
+static void setFrameIfExists(CCSprite* spr, std::string const& name) {
+    if (!spr) return;
+    if (auto frame = CCSpriteFrameCache::get()->spriteFrameByName(name.c_str())) {
+        spr->setDisplayFrame(frame);
+    }
+}
+
 #include <Geode/modify/PlayerObject.hpp>
 class $modify(MyPlayerObject, PlayerObject) {
     enum class Gamemode {
@@ -47,13 +86,25 @@ class $modify(MyPlayerObject, PlayerObject) {
     }
 
     void updatePlayerShipFrame(int frame) {
-        PlayerObject::updatePlayerShipFrame(this->getNewIconId(frame));
+        PlayerObject::updatePlayerShipFrame(frame);
+		// it's not the prettiest solution but it'll have to do...
+		if (frame == 0 || this->useDefaultMiniIcon()) {
+			setFrameIfExists(m_vehicleSprite,          "ship_00_001.png");
+			setFrameIfExists(m_vehicleSpriteSecondary, "ship_00_2_001.png");
+			setFrameIfExists(m_vehicleGlow,            "ship_00_glow_001.png");
+		}
     }
     void updatePlayerJetpackFrame(int frame) {
         PlayerObject::updatePlayerJetpackFrame(this->getNewIconId(frame));
     }
     void updatePlayerBirdFrame(int frame) {
-        PlayerObject::updatePlayerBirdFrame(this->getNewIconId(frame));
+        PlayerObject::updatePlayerBirdFrame(frame);
+		if (frame == 0 || this->useDefaultMiniIcon()) {
+			setFrameIfExists(m_vehicleSprite,          "bird_00_001.png");
+			setFrameIfExists(m_vehicleSpriteSecondary, "bird_00_2_001.png");
+			setFrameIfExists(m_birdVehicle, "bird_00_3_001.png");
+			setFrameIfExists(m_vehicleGlow,            "bird_00_glow_001.png");
+		}
     }
     void updatePlayerDartFrame(int frame) {
         PlayerObject::updatePlayerDartFrame(this->getNewIconId(frame));
